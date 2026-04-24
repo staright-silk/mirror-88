@@ -16,18 +16,9 @@ npm install
 cp .env.example .env
 ```
 Fill in:
-- `VITE_SUPABASE_URL` — from your Supabase project settings
-- `VITE_SUPABASE_ANON_KEY` — from your Supabase project settings
 - `VITE_ANTHROPIC_API_KEY` — from console.anthropic.com
 
-### 3. Supabase setup
-Run the SQL in `supabase/schema.sql` in your Supabase SQL editor.
-
-Then in Supabase Auth settings:
-- Enable **Email** provider
-- Enable **Google** OAuth (add your Google OAuth credentials)
-
-### 4. Run
+### 3. Run
 ```bash
 npm run dev
 ```
@@ -58,14 +49,6 @@ Add your 3 env vars in Vercel's dashboard.
 
 ---
 
-## Supabase Schema
-
-```sql
--- See supabase/schema.sql
-```
-
----
-
 ## ⚠️ Production Note
 The Anthropic API key is currently used client-side (fine for demos/hackathons).
-For production, proxy requests through a Supabase Edge Function or your own backend.
+For production, proxy requests through a backend or edge function.
