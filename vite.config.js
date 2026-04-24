@@ -22,18 +22,18 @@ export default ({ mode }) => {
           let rawBody = ''
           for await (const chunk of req) rawBody += chunk
           const payload = rawBody ? JSON.parse(rawBody) : {}
-          let model = GEMINI_MODEL
-          let apiUrl = `https://gemini.googleapis.com/v1/models/${encodeURIComponent(model)}:generate?key=${encodeURIComponent(GEMINI_KEY)}`
-          let apiRes = await fetch(apiUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(payload),
-          })
+          const candidateModels = [GEMINI_MODEL]
+          if (GEMINI_MODEL === 'gemini-1.5-pro') candidateModels.push('gemini-1.5', 'gemini-1.0-pro', 'gemini-1.0')
+          else if (GEMINI_MODEL === 'gemini-1.5') candidateModels.push('gemini-1.0')
+          else if (GEMINI_MODEL === 'gemini-1.0-pro') candidateModels.push('gemini-1.0')
 
-          if (apiRes.status === 404 && model === 'gemini-1.5-pro') {
-            model = 'gemini-1.5'
+          let apiRes = null
+          let apiUrl = ''
+          let model = ''
+          let lastText = ''
+
+          for (const candidate of candidateModels) {
+            model = candidate
             apiUrl = `https://gemini.googleapis.com/v1/models/${encodeURIComponent(model)}:generate?key=${encodeURIComponent(GEMINI_KEY)}`
             apiRes = await fetch(apiUrl, {
               method: 'POST',
@@ -42,19 +42,22 @@ export default ({ mode }) => {
               },
               body: JSON.stringify(payload),
             })
+            lastText = await apiRes.text()
+            if (apiRes.ok) break
+            if (apiRes.status !== 404) break
           }
 
-          const text = await apiRes.text()
-          if (!apiRes.ok) {
-            console.error('Gemini proxy error', { apiUrl, status: apiRes.status, body: text })
-            res.statusCode = apiRes.status
+          if (!apiRes?.ok) {
+            console.error('Gemini proxy error', { apiUrl, status: apiRes?.status, body: lastText, model })
+            res.statusCode = apiRes?.status || 500
             res.setHeader('Content-Type', 'application/json')
-            res.end(JSON.stringify({ error: `Gemini API ${apiRes.status}`, details: text, model, apiUrl }))
+            res.end(JSON.stringify({ error: `Gemini API ${apiRes?.status || 500}`, details: lastText, model, apiUrl }))
             return
           }
+
           res.statusCode = apiRes.status
           res.setHeader('Content-Type', 'application/json')
-          res.end(text)
+          res.end(lastText)
         } catch (error) {
           res.statusCode = 500
           res.setHeader('Content-Type', 'application/json')
