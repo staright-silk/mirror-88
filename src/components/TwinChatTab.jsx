@@ -25,8 +25,9 @@ export default function TwinChatTab({ persona }) {
     try {
       const reply = await generateTwinChatReply(persona, next, msg)
       setHistory([...next, { role:'twin', content:reply }])
-    } catch {
-      setHistory([...next, { role:'twin', content:'Tell me more.' }])
+    } catch (error) {
+      console.error('Twin chat error', error)
+      setHistory([...next, { role:'twin', content:`Error: ${error?.message || 'Unable to query AI.'}` }])
     } finally { setLoading(false) }
   }
 

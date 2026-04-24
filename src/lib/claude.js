@@ -1,17 +1,45 @@
-const API_URL = 'https://api.anthropic.com/v1/messages'
-const MODEL   = 'claude-sonnet-4-20250514'
-const KEY     = import.meta.env.VITE_ANTHROPIC_API_KEY
+const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages'
+const ANTHROPIC_MODEL   = 'claude-sonnet-4-20250514'
+const ANTHROPIC_KEY     = import.meta.env.VITE_ANTHROPIC_API_KEY
+const GEMINI_KEY        = import.meta.env.VITE_GEMINI_API_KEY
+const GEMINI_MODEL        = import.meta.env.VITE_GEMINI_MODEL || 'gemini-1.5-pro'
 
 async function ask(prompt, maxTokens = 500) {
-  const res = await fetch(API_URL, {
+  if (GEMINI_KEY) {
+    const url = '/api/gemini'
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        prompt: {
+          messages: [{ author: 'user', content: [{ type: 'text', text: prompt }] }],
+        },
+        maxOutputTokens: maxTokens,
+        temperature: 0.3,
+      }),
+    })
+    if (!res.ok) {
+      const text = await res.text()
+      throw new Error(`Gemini proxy ${res.status}: ${text}`)
+    }
+    const d = await res.json()
+    const content = d?.candidates?.[0]?.content || d?.output?.[0]?.content || []
+    return content.filter(c => c.type === 'text').map(c => c.text || '').join('') || d?.output_text || ''
+  }
+
+  if (!ANTHROPIC_KEY) throw new Error('No Anthropic or Gemini API key configured.')
+
+  const res = await fetch(ANTHROPIC_API_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': KEY,
+      'x-api-key': ANTHROPIC_KEY,
       'anthropic-version': '2023-06-01',
       'anthropic-dangerous-direct-browser-access': 'true',
     },
-    body: JSON.stringify({ model: MODEL, max_tokens: maxTokens, messages: [{ role:'user', content:prompt }] }),
+    body: JSON.stringify({ model: ANTHROPIC_MODEL, max_tokens: maxTokens, messages: [{ role:'user', content:prompt }] }),
   })
   if (!res.ok) throw new Error(`API ${res.status}`)
   const d = await res.json()
