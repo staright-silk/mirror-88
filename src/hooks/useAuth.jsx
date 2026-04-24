@@ -4,12 +4,20 @@ import { getCurrentSession, subscribeAuth } from '../lib/localStore'
 const AuthCtx = createContext()
 
 export function AuthProvider({ children }) {
-  const [user] = useState(null)
-  const [profile] = useState(null)
-  const [loading] = useState(false)
+  const [session, setSession] = useState(getCurrentSession())
+
+  useEffect(() => {
+    const unsub = subscribeAuth(() => setSession(getCurrentSession()))
+    return unsub
+  }, [])
 
   return (
-    <AuthCtx.Provider value={{ user, profile, loading }}>
+    <AuthCtx.Provider value={{
+      user: session?.user || null,
+      profile: session?.profile || null,
+      loading: false,
+      refreshProfile: () => setSession(getCurrentSession()),
+    }}>
       {children}
     </AuthCtx.Provider>
   )
