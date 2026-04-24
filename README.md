@@ -4,7 +4,7 @@
 
 ---
 
-## Setup (15 mins)
+## Setup
 
 ### 1. Install dependencies
 ```bash
@@ -38,17 +38,3 @@ npm run dev
 
 ---
 
-## Deploy to Vercel
-```bash
-npm run build
-# drag the dist/ folder to vercel.com, or:
-npx vercel --prod
-```
-
-Add your 3 env vars in Vercel's dashboard.
-
----
-
-## ⚠️ Production Note
-The Anthropic API key is currently used client-side (fine for demos/hackathons).
-For production, proxy requests through a backend or edge function.
